@@ -22,7 +22,7 @@ class expiredDate
 
             foreach ($data as $Raw )
 
-        $end_date = strtotime($Raw->end_date);
+        $end_date = $Raw->end_date;
             if ($end_date >= $exacttoday )
             {
             return $next($request);
