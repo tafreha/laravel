@@ -1,90 +1,172 @@
 <?php
+
 namespace App\Http\Controllers;
-use App\Models\File;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Http\Request;
-use Illuminate\Database\Migrations\CreateFilesTable;
+use App\Models\User;
+use App\Models\File;
 
 
 class userController extends Controller
 {
 
 
-public function create(){
-    return view('create');
-}
+    public function index(){
+        // code .....
 
-public function store(Request $req){
 
-    $error=[];
-$title=$req->title;
-$content=$req->content;
-$image=$req->image;
-$validated = $req->validate([
-    'title' => 'required|max:255|string',
-    'content' => 'required|min:50','image'=>'required|image'
-]);
 
-$imageModel = new File;
-    if($req->file()) {
-        $imageName = time().'_'.$req->image;
+        $data = User :: get();
 
-        $imagePath = $req->file('image')->storeAs('uploads', $imageName, 'public');
-        $imageModel->name =time().'_'.$req->image;
-        $imageModel->image = '/storage/' . $imagePath;
-        $imageModel->save();
-        return back()
-        ->with('success','image has been uploaded.')
-        ->with('image', $imageName);
-
+        return view('user.index',['data' => $data]);
 
 
     }
 
 
-dd($validated);
+#############################################################################################################
+
+
+
+   public function Create(){
+       return view('user.create');
+   }
+
+
+#############################################################################################################
+
+   public function Store(Request $request){
+       // code ......
+
+       $data = $this->validate($request,[
+          "name"   => "required|min:3",
+          "email"  => "required|email|unique:users",
+          "password" => ["required",Password::min(6)->letters()]
+       ]);
+
+
+       $data['password'] = bcrypt($data['password']);
+
+      $op =   user :: create($data);
+
+      if($op){
+          $message = 'Raw Inserted';
+      }else{
+          $message = 'Error Try Again';
+      }
+
+
+    // session()->put('Message2',"test Message 2 ");    // $_SESSION['Message'] = $message;
+
+    session()->flash('Message',$message);
+
+    return redirect(url('/user/'));
+
+   }
+
+
+#############################################################################################################
+
+
+  public function edit($id){
+
+        $data = user  :: find($id);  // dd($data->name);
+
+     return view('user.edit',['data' => $data]);
+  }
+
+
+#############################################################################################################
+
+
+  public function update (Request $request,$id){
+
+     // code ......
+
+      $data = $this->validate($request,[
+          "name" => "required",
+          "email" => "required|email"
+      ]);
+
+
+       $op = user :: where('id',$id)->update($data);
+
+       if($op){
+          $message = "Raw Updated";
+       }else{
+           $message = "Error Try Again";
+       }
+
+
+       session()->flash('Message',$message);
+
+    return redirect(url('/user/'));
+
+  }
+
+#############################################################################################################
+
+
+
+   public function delete($id){
+       // code ...
+   // delete from users where id = 1
+
+   $op = user :: where('id',$id)->delete();
+
+
+   if($op){
+     $message = 'Raw Removed';
+   }else{
+      $message = 'Error Try Again';
+   }
+
+
+   session()->flash('Message',$message);
+
+    return redirect(url('/user/'));
+
+
+
+   }
+
+#############################################################################################################
+
+public function login(){
+    return view('user.login');
+}
+
+#############################################################################################################
+
+public function doLogin(Request $request){
+
+      // code ....
+
+      $data = $this->validate($request,[
+        "email"  => "required|email",
+        "password" => ["required",Password::min(6)->letters()]
+     ]);
+
+
+     if(auth()->attempt($data)){
+
+        return  redirect(url('/user/'));
+     }else{
+         session()->flash('Message','Error IN yOUR Cred Try Again');
+         return  redirect(url('/Login/'));
+     }
 
 
 }
-public function search(ArticleRequest $request){
 
- if ($request->hasFile('file')) {
+#############################################################################################################
+public function logOut(){
+    // code ....
 
-    $file = Input::file('file');
-    $imgTitle = $req->title;
-    $imagePath = 'uploads/'. $imgTitle . '.jpg';
-    $request->image_path = $imagePath;
+       auth()->logout();
+       return  redirect(url('/Login/'));
 
-    Article::create(array('title' => $req->title,
-        'body' => $req->body,
-        'image_path' => $imagePath));
-
-    Image::make($file)->resize(300, 200)->save($imagePath);
-} else {
-//            $file = Input::file('file');
-    $imgTitle = $req->title;
-
-    $query = $imgTitle;
-
-    $ch = curl_init();
-
-    curl_setopt($ch, CURLOPT_URL, "https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=" . urlencode($query));
-
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-    $output = json_decode(curl_exec($ch));
-
-//            $file = file_get_contents($output);
-    curl_close($ch);
-
-    $imagePath = 'uploads/' . $imgTitle . '.jpg';
-
-    $reqs->image_path = $imagePath;
-    Article::create(array('title' => $req->title,
-        'body' => $req->body,
-        'image_path' => $imagePath));
-
-    Image::make($output)->resize(300, 200)->save($imagePath);
 }
+
+
 }
-}
-?>

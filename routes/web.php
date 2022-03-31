@@ -1,7 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use  Illuminate\Support\Facades\Route;
 use  App\Http\Controllers\usercontroller;
+use  App\Http\Controllers\BlogController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -17,10 +19,27 @@ use  App\Http\Controllers\usercontroller;
 Route::get('/', function () {
     return view('welcome');
 });
-// Route::get('create', function () {
-//     return view('create');
-// });
+
+
 Route::get('user/create',[usercontroller::class,'create']);
 Route::post('user/store',[usercontroller::class,'store']);
-Route::post('search',[usercontroller::class,'search']);
 
+Route::middleware(['userCheck'])->group(function(){
+
+Route::get('user/',[usercontroller::class,'index']);
+Route::get('user/Remove/{id}',[usercontroller::class,'delete']);
+Route::get('user/Edit/{id}',[usercontroller::class,'edit']);
+Route::post('user/Update/{id}',[usercontroller::class,'update']);
+Route::get('/user/logOut',[usercontroller::class,'logOut']);
+Route::resource('Blog',BlogController::class);
+});
+Route::middleware(['expireDate'])->group(function(){
+
+        Route::get('Blog/{id}/edit',[BlogController::class,'edit']);
+        Route::put('Blog/{id}',[BlogController::class,'update']);
+        Route::delete('Blog/{id}',[BlogController::class,'delete']);
+});
+
+# Auth .....
+Route::get('/Login',[usercontroller::class,'login'])->name('login');
+Route::post('/DoLogin',[usercontroller::class,'doLogin']);
